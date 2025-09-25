@@ -33,7 +33,7 @@
         <img src="LogoINKA.png" alt="Logo de INKA" class="h-20 ml-4">
         
         <div class="nav-links mr-4">
-            <a href="Portada.html" class="nav-link">Portada</a>
+            <a href="index.html" class="nav-link">Portada</a>
             <a href="ReportedeGestion.html" class="nav-link">Reporte de Gestión</a>
             <a href="Rentabilidadporpaquete.html" class="nav-link">Rentabilidad por Paquete</a>
             <a href="Recetario.html" class="nav-link">Recetario</a>
@@ -76,3 +76,4 @@
     </main>
 </body>
 </html>
+
