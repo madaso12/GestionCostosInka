@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rentabilidad por Paquete</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* * ESTILOS REPLICADOS DE TU EJEMPLO
+         * Paleta: #B85042 (Accent), #7d5a5a (Secondary)
+         * Nav Bar: #BE272E 
+         */
+        body { font-family: 'Inter', sans-serif; background-color: #F8F7F4; color: #2c3e50; margin: 0; }
+        .accent-color { color: #B85042; }
+        .secondary-color { color: #7d5a5a; }
+        
+        .nav-bg { 
+            background-color: #BE272E; 
+            padding: 1rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+        .nav-link { color: white; text-decoration: none; margin: 0 20px; font-weight: 500; transition: opacity 0.2s; }
+        .nav-link:hover { opacity: 0.8; } 
+
+        /* Estilos de Reporte y Tabla (Ajustados al nuevo color secundario) */
+        .report-card { background-color: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); margin-bottom: 24px; }
+        .report-table { width: 100%; border-collapse: collapse; }
+        .report-table th, .report-table td { 
+            padding: 12px 15px; 
+            border-bottom: 1px solid #e2e8f0; 
+            white-space: nowrap; 
+            text-align: right; 
+        }
+        .report-table td:first-child, .report-table th:first-child { 
+            text-align: left; 
+        }
+        .report-table th { background-color: #f1f5f9; font-weight: 600; }
+        .report-table tbody tr:hover { background-color: #f0f4f8; }
+        .report-table tbody tr:nth-child(even) { background-color: #fcfcfc; } 
+
+        .profit { color: #065f46; font-weight: 600; }
+        .loss { color: #991b1b; font-weight: 600; }
+
+        /* Controles y Footer */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #B85042; } /* Usando accent-color en el toggle */
+        input:checked + .slider:before { transform: translateX(26px); }
+        
+        .totals-row { font-weight: bold; background-color: #e2e8f0; border-top: 3px solid #B85042; }
+        .expand-toggle { 
+            cursor: pointer; 
+            font-size: 0.8rem; 
+            font-weight: bold; 
+            margin-left: 5px; 
+            color: #B85042; 
+            transition: transform 0.2s;
+        }
+        .ratio { font-size: 0.8em; color: #6b7280; font-weight: normal; margin-left: 8px; }
+    </style>
+</head>
+<body>
+    <nav class="nav-bg">
+        <img src="LogoINKA.png" alt="Logo de INKA" class="h-20 ml-4">
+        
+        <div class="nav-links mr-4">
+            <a href="index.html" class="nav-link">Portada</a>
+            <a href="ReportedeGestion.html" class="nav-link">Reporte de Gestión</a>
+            <a href="Rentabilidadporpaquete.html" class="nav-link">Rentabilidad por Paquete</a>
+            <a href="Recetario.html" class="nav-link">Recetario</a>
+        </div>
+    </nav>
+    
+    <main class="flex-1 p-6 md:p-10 max-w-7xl mx-auto">
+        <header class="mb-6 pb-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <div>
+                <h1 class="text-3xl font-bold accent-color">Rentabilidad por Paquete</h1>
+                <p class="text-md font-medium secondary-color">Análisis detallado de la utilidad por producto</p>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <div class="flex items-center space-x-2 bg-white p-2 rounded-xl shadow-md">
+                    <label for="exchangeRate" class="text-sm font-semibold text-gray-700">TC USD/ARS:</label>
+                    <input type="number" id="exchangeRate" value="1200" step="10" 
+                           class="w-24 text-center p-1 border border-gray-300 rounded-lg 
+                           focus:outline-none focus:border-accent-color focus:ring-2 focus:ring-[#B85042]">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span id="currentCurrencyLabel" class="text-sm text-gray-600 font-medium">USD</span>
+                    <label class="switch">
+                        <input type="checkbox" id="currencyToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="otherCurrencyLabel" class="text-sm text-gray-600 font-medium">ARS</span>
+                </div>
+            </div>
+        </header>
+
+        <section id="rentabilidad_paquete" class="view active">
+            <div class="report-card overflow-x-auto">
+                <table class="report-table">
+                    <thead id="tableHead"></thead>
+                    <tbody id="paqueteTableBody"></tbody>
+                    <tfoot id="paqueteTableFooter"></tfoot>
+                </table>
+            </div>
+        </section>
+        
+        <footer class="mt-20 text-center text-gray-500 text-sm border-t pt-4">
+            <p>Dashboard Financiero | Desarrollado para la gestión de datos operativos.</p>
+            <p class="mt-1">Última Actualización: Septiembre 2025</p>
+        </footer>
+    
+    </main>
+
+    <script>
+        let currentCurrency = 'USD';
+        let isVariableCostsExpanded = false;
+        let isFixedCostsExpanded = false;
+        
+        // Data proporcionada por el usuario
+        const data = [
+            { "CERRO": "ACONCAGUA", "PAQUETE": "GON", "PAX": 389, "VENTAS (USD)": 779375.00, "TRANSFERS (ARS)": 61895728.41, "PERMISO PARQUE (ARS)": 162763228.77, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 4547265.83, "MERCHANDISING (ARS)": 1513618.68, "FFT (ARS)": 3880256.08, "HOSPEDAJE-HOTELES (ARS)": 21370499.81, "COMIDAS-HOTELERIA (ARS)": 888076.40, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 32060.86, "PORTEOS CLIENTES (USD)": 49685, "ARRIEROS INTERNOS (ARS)": 15981639.01, "ARRIEROS CLIENTES (ARS)": 6983785.63, "COSTOS FIJOS GENERALES (ARS)": 267630710.47 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "GOPM", "PAX": 1, "VENTAS (USD)": 1410.00, "TRANSFERS (ARS)": 159114.98, "PERMISO PARQUE (ARS)": 418414.47, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 11689.63, "MERCHANDISING (ARS)": 3891.05, "FFT (ARS)": 9974.95, "HOSPEDAJE-HOTELES (ARS)": 54937.02, "COMIDAS-HOTELERIA (ARS)": 2282.97, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 82.42, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 41083.90, "ARRIEROS CLIENTES (ARS)": 17953.18, "COSTOS FIJOS GENERALES (ARS)": 687996.69 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "GOT", "PAX": 34, "VENTAS (USD)": 85062.00, "TRANSFERS (ARS)": 5409909.42, "PERMISO PARQUE (ARS)": 14226091.97, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 397447.40, "MERCHANDISING (ARS)": 132295.72, "FFT (ARS)": 339148.35, "HOSPEDAJE-HOTELES (ARS)": 1867858.60, "COMIDAS-HOTELERIA (ARS)": 77621.07, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 4573.89, "PORTEOS CLIENTES (USD)": 1819, "ARRIEROS INTERNOS (ARS)": 3839405.02, "ARRIEROS CLIENTES (ARS)": 1448303.31, "COSTOS FIJOS GENERALES (ARS)": 23391887.29 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "GPN", "PAX": 129, "VENTAS (USD)": 740446.00, "TRANSFERS (ARS)": 20525832.81, "PERMISO PARQUE (ARS)": 53975466.61, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 1507962.19, "MERCHANDISING (ARS)": 501945.53, "FFT (ARS)": 1286768.73, "HOSPEDAJE-HOTELES (ARS)": 7086875.26, "COMIDAS-HOTELERIA (ARS)": 294503.49, "GUIAS (USD)": 114410.99, "PORTEOS INTERNOS (USD)": 10632.01, "PORTEOS CLIENTES (USD)": 39559, "ARRIEROS INTERNOS (ARS)": 5299823.73, "ARRIEROS CLIENTES (ARS)": 2315959.76, "COSTOS FIJOS GENERALES (ARS)": 88751572.37 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "GPT", "PAX": 67, "VENTAS (USD)": 286101.00, "TRANSFERS (ARS)": 10660703.86, "PERMISO PARQUE (ARS)": 28033769.48, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 783205.17, "MERCHANDISING (ARS)": 260700.39, "FFT (ARS)": 668321.74, "HOSPEDAJE-HOTELES (ARS)": 3680780.17, "COMIDAS-HOTELERIA (ARS)": 152959.18, "GUIAS (USD)": 59422.76, "PORTEOS INTERNOS (USD)": 9013.24, "PORTEOS CLIENTES (USD)": 27453, "ARRIEROS INTERNOS (ARS)": 7565886.36, "ARRIEROS CLIENTES (ARS)": 2854009.47, "COSTOS FIJOS GENERALES (ARS)": 46095777.90 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "IKG", "PAX": 1, "VENTAS (USD)": 12050.00, "TRANSFERS (ARS)": 159114.98, "PERMISO PARQUE (ARS)": 418414.47, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 11689.63, "MERCHANDISING (ARS)": 3891.05, "FFT (ARS)": 9974.95, "HOSPEDAJE-HOTELES (ARS)": 54937.02, "COMIDAS-HOTELERIA (ARS)": 2282.97, "GUIAS (USD)": 886.91, "PORTEOS INTERNOS (USD)": 134.53, "PORTEOS CLIENTES (USD)": 540, "ARRIEROS INTERNOS (ARS)": 112923.68, "ARRIEROS CLIENTES (ARS)": 42597.16, "COSTOS FIJOS GENERALES (ARS)": 687996.69 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "IKN", "PAX": 126, "VENTAS (USD)": 667784.00, "TRANSFERS (ARS)": 20048487.86, "PERMISO PARQUE (ARS)": 52720223.20, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 1472893.30, "MERCHANDISING (ARS)": 490272.37, "FFT (ARS)": 1256843.87, "HOSPEDAJE-HOTELES (ARS)": 6922064.21, "COMIDAS-HOTELERIA (ARS)": 287654.57, "GUIAS (USD)": 111750.27, "PORTEOS INTERNOS (USD)": 10384.75, "PORTEOS CLIENTES (USD)": 32925, "ARRIEROS INTERNOS (ARS)": 5176572.02, "ARRIEROS CLIENTES (ARS)": 2262100.23, "COSTOS FIJOS GENERALES (ARS)": 86687582.31 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "IKNEXT", "PAX": 61, "VENTAS (USD)": 332705.00, "TRANSFERS (ARS)": 9706013.97, "PERMISO PARQUE (ARS)": 25523282.66, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 713067.39, "MERCHANDISING (ARS)": 237354.09, "FFT (ARS)": 608472.03, "HOSPEDAJE-HOTELES (ARS)": 3351158.07, "COMIDAS-HOTELERIA (ARS)": 139261.34, "GUIAS (USD)": 54101.32, "PORTEOS INTERNOS (USD)": 5027.54, "PORTEOS CLIENTES (USD)": 19631, "ARRIEROS INTERNOS (ARS)": 2506118.20, "ARRIEROS CLIENTES (ARS)": 1095143.76, "COSTOS FIJOS GENERALES (ARS)": 41967797.79 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "IKT", "PAX": 77, "VENTAS (USD)": 415156.00, "TRANSFERS (ARS)": 12251853.69, "PERMISO PARQUE (ARS)": 32217914.18, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 900101.46, "MERCHANDISING (ARS)": 299610.89, "FFT (ARS)": 768071.25, "HOSPEDAJE-HOTELES (ARS)": 4230150.35, "COMIDAS-HOTELERIA (ARS)": 175788.90, "GUIAS (USD)": 68291.83, "PORTEOS INTERNOS (USD)": 10358.51, "PORTEOS CLIENTES (USD)": 23940, "ARRIEROS INTERNOS (ARS)": 8695123.14, "ARRIEROS CLIENTES (ARS)": 3279981.03, "COSTOS FIJOS GENERALES (ARS)": 52975744.75 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "SSCF", "PAX": 6, "VENTAS (USD)": 990.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 2510486.82, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 70137.78, "MERCHANDISING (ARS)": 23346.30, "FFT (ARS)": 59849.71, "HOSPEDAJE-HOTELES (ARS)": 329622.11, "COMIDAS-HOTELERIA (ARS)": 13697.84, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 494.51, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 246503.43, "ARRIEROS CLIENTES (ARS)": 107719.06, "COSTOS FIJOS GENERALES (ARS)": 4127980.11 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "SSN", "PAX": 58, "VENTAS (USD)": 63012.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 24268039.25, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 677998.50, "MERCHANDISING (ARS)": 225680.93, "FFT (ARS)": 578547.18, "HOSPEDAJE-HOTELES (ARS)": 3186347.02, "COMIDAS-HOTELERIA (ARS)": 132412.42, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 4780.28, "PORTEOS CLIENTES (USD)": 1523, "ARRIEROS INTERNOS (ARS)": 2382866.48, "ARRIEROS CLIENTES (ARS)": 1041284.23, "COSTOS FIJOS GENERALES (ARS)": 39903807.73 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "SSPF", "PAX": 17, "VENTAS (USD)": 3616.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 7113045.99, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 198723.70, "MERCHANDISING (ARS)": 66147.86, "FFT (ARS)": 169574.17, "HOSPEDAJE-HOTELES (ARS)": 933929.30, "COMIDAS-HOTELERIA (ARS)": 38810.54, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 1401.12, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 698426.38, "ARRIEROS CLIENTES (ARS)": 305204, "COSTOS FIJOS GENERALES (ARS)": 11695943.65 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "SSPM", "PAX": 5, "VENTAS (USD)": 1140.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 2092072.35, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 58448.15, "MERCHANDISING (ARS)": 19455.25, "FFT (ARS)": 49874.76, "HOSPEDAJE-HOTELES (ARS)": 274685.09, "COMIDAS-HOTELERIA (ARS)": 11414.86, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 412.09, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 205419.52, "ARRIEROS CLIENTES (ARS)": 89765.88, "COSTOS FIJOS GENERALES (ARS)": 3439983.43 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "SST", "PAX": 12, "VENTAS (USD)": 17677.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 5020973.64, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 140275.55, "MERCHANDISING (ARS)": 46692.61, "FFT (ARS)": 119699.42, "HOSPEDAJE-HOTELES (ARS)": 659244.21, "COMIDAS-HOTELERIA (ARS)": 27395.67, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 1614.31, "PORTEOS CLIENTES (USD)": 2010, "ARRIEROS INTERNOS (ARS)": 1355084.13, "ARRIEROS CLIENTES (ARS)": 511165.88, "COSTOS FIJOS GENERALES (ARS)": 8255960.22 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "SSV", "PAX": 1, "VENTAS (USD)": 1920.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 418414.47, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 11689.63, "MERCHANDISING (ARS)": 3891.05, "FFT (ARS)": 9974.95, "HOSPEDAJE-HOTELES (ARS)": 54937.02, "COMIDAS-HOTELERIA (ARS)": 2282.97, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 134.53, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 112923.68, "ARRIEROS CLIENTES (ARS)": 42597.16, "COSTOS FIJOS GENERALES (ARS)": 687996.69 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "TKCB", "PAX": 15, "VENTAS (USD)": 20368.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 6276217.05, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 175344.44, "MERCHANDISING (ARS)": 58365.76, "FFT (ARS)": 149624.27, "HOSPEDAJE-HOTELES (ARS)": 824055.26, "COMIDAS-HOTELERIA (ARS)": 34244.59, "GUIAS (USD)": 13303.6, "PORTEOS INTERNOS (USD)": 1236.28, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 616258.57, "ARRIEROS CLIENTES (ARS)": 269297.65, "COSTOS FIJOS GENERALES (ARS)": 10319950.28 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "TKCB PRIV", "PAX": 1, "VENTAS (USD)": 3950.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 418414.47, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 11689.63, "MERCHANDISING (ARS)": 3891.05, "FFT (ARS)": 9974.95, "HOSPEDAJE-HOTELES (ARS)": 54937.02, "COMIDAS-HOTELERIA (ARS)": 2282.97, "GUIAS (USD)": 886.91, "PORTEOS INTERNOS (USD)": 82.42, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 41083.90, "ARRIEROS CLIENTES (ARS)": 17953.18, "COSTOS FIJOS GENERALES (ARS)": 687996.69 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "TKCF", "PAX": 5, "VENTAS (USD)": 915.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 2092072.35, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 58448.15, "MERCHANDISING (ARS)": 19455.25, "FFT (ARS)": 49874.76, "HOSPEDAJE-HOTELES (ARS)": 274685.09, "COMIDAS-HOTELERIA (ARS)": 11414.86, "GUIAS (USD)": 4434.53, "PORTEOS INTERNOS (USD)": 412.09, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 205419.52, "ARRIEROS CLIENTES (ARS)": 89765.88, "COSTOS FIJOS GENERALES (ARS)": 3439983.43 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "TKPF", "PAX": 17, "VENTAS (USD)": 8712.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 7113045.99, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 198723.70, "MERCHANDISING (ARS)": 66147.86, "FFT (ARS)": 169574.17, "HOSPEDAJE-HOTELES (ARS)": 933929.30, "COMIDAS-HOTELERIA (ARS)": 38810.54, "GUIAS (USD)": 15077.42, "PORTEOS INTERNOS (USD)": 1401.12, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 698426.38, "ARRIEROS CLIENTES (ARS)": 305204.00, "COSTOS FIJOS GENERALES (ARS)": 11695943.65 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "TKPM", "PAX": 6, "VENTAS (USD)": 6950.00, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 2510486.82, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 70137.78, "MERCHANDISING (ARS)": 23346.30, "FFT (ARS)": 59849.71, "HOSPEDAJE-HOTELES (ARS)": 329622.11, "COMIDAS-HOTELERIA (ARS)": 13697.84, "GUIAS (USD)": 5321.44, "PORTEOS INTERNOS (USD)": 494.51, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 246503.43, "ARRIEROS CLIENTES (ARS)": 107719.06, "COSTOS FIJOS GENERALES (ARS)": 4127980.11 },
+            { "CERRO": "ACONCAGUA", "PAQUETE": "TKPM PRIV", "PAX": 0, "VENTAS (USD)": 0, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "TILCARA", "PAQUETE": "TKTILCAL", "PAX": 9, "VENTAS (USD)": 3945, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "AVION URUGUAYOS", "PAQUETE": "AUCB", "PAX": 15, "VENTAS (USD)": 5270, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "AVION URUGUAYOS", "PAQUETE": "AUCBGP", "PAX": 7, "VENTAS (USD)": 2650, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "KILIMANJARO", "PAQUETE": "KILI", "PAX": 9, "VENTAS (USD)": 33920, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "VALLECITOS", "PAQUETE": "VLLGP", "PAX": 1, "VENTAS (USD)": 850, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "AVION URUGUAYOS", "PAQUETE": "AUTK", "PAX": 41, "VENTAS (USD)": 19254, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "AVION URUGUAYOS", "PAQUETE": "AUTKGP", "PAX": 5, "VENTAS (USD)": 2200, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "CRUCE DE LOS ANDES", "PAQUETE": "CRU", "PAX": 5, "VENTAS (USD)": 4010, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "ARROYO TURQUESA", "PAQUETE": "TKAT", "PAX": 1, "VENTAS (USD)": 208, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "EVEREST", "PAQUETE": "TKEV", "PAX": 2, "VENTAS (USD)": 4700, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 },
+            { "CERRO": "OTROS INGRESOS", "PAQUETE": "Venta por campamentos", "PAX": 0, "VENTAS (USD)": 429275, "TRANSFERS (ARS)": 0, "PERMISO PARQUE (ARS)": 0, "COMIDAS ALTURA/CAMPAMENTO (ARS)": 0, "INTERNET (ARS)": 0, "MERCHANDISING (ARS)": 0, "FFT (ARS)": 0, "HOSPEDAJE-HOTELES (ARS)": 0, "COMIDAS-HOTELERIA (ARS)": 0, "GUIAS (USD)": 0, "PORTEOS INTERNOS (USD)": 0, "PORTEOS CLIENTES (USD)": 0, "ARRIEROS INTERNOS (ARS)": 0, "ARRIEROS CLIENTES (ARS)": 0, "COSTOS FIJOS GENERALES (ARS)": 0 }
+        ];
+
+        const paqueteTableBody = document.getElementById('paqueteTableBody');
+        const paqueteTableFooter = document.getElementById('paqueteTableFooter');
+        const tableHead = document.getElementById('tableHead');
+        const exchangeRateInput = document.getElementById('exchangeRate');
+        const currencyToggle = document.getElementById('currencyToggle');
+        const currentCurrencyLabel = document.getElementById('currentCurrencyLabel');
+        const otherCurrencyLabel = document.getElementById('otherCurrencyLabel');
+        
+        const VARIABLE_COSTS_ARS = ["TRANSFERS (ARS)", "PERMISO PARQUE (ARS)", "COMIDAS ALTURA/CAMPAMENTO (ARS)", "INTERNET (ARS)", "MERCHANDISING (ARS)", "FFT (ARS)", "HOSPEDAJE-HOTELES (ARS)", "COMIDAS-HOTELERIA (ARS)", "ARRIEROS INTERNOS (ARS)", "ARRIEROS CLIENTES (ARS)"];
+        const VARIABLE_COSTS_USD = ["GUIAS (USD)", "PORTEOS INTERNOS (USD)", "PORTEOS CLIENTES (USD)"];
+        const FIXED_COSTS_ARS = ["COSTOS FIJOS GENERALES (ARS)"];
+        
+        function cleanAndParse(value) {
+            if (typeof value === 'string') {
+                return parseFloat(value.replace(/\$|,|\./g, '').replace(/,/g, '.')) || 0;
+            }
+            return value || 0;
+        }
+
+        function calculateTotals(record, rate) {
+            let totalVariableCostsARS = 0;
+            let totalVariableCostsUSD = 0;
+            let totalFixedCostsARS = 0;
+
+            VARIABLE_COSTS_ARS.forEach(key => totalVariableCostsARS += cleanAndParse(record[key]));
+            VARIABLE_COSTS_USD.forEach(key => totalVariableCostsUSD += cleanAndParse(record[key]));
+            FIXED_COSTS_ARS.forEach(key => totalFixedCostsARS += cleanAndParse(record[key]));
+
+            const salesUSD = cleanAndParse(record['VENTAS (USD)']);
+            const pax = cleanAndParse(record['PAX']);
+            
+            let totalSales, totalCosts, netProfit, totalVariableCosts, totalFixedCosts;
+            
+            if (currentCurrency === 'ARS') {
+                totalSales = salesUSD * rate;
+                totalVariableCosts = totalVariableCostsARS + (totalVariableCostsUSD * rate);
+                totalFixedCosts = totalFixedCostsARS;
+            } else { // 'USD'
+                totalSales = salesUSD;
+                totalVariableCosts = (totalVariableCostsARS / rate) + totalVariableCostsUSD;
+                totalFixedCosts = totalFixedCostsARS / rate;
+            }
+            totalCosts = totalVariableCosts + totalFixedCosts;
+            netProfit = totalSales - totalCosts;
+
+            const costPerPax = pax > 0 ? totalCosts / pax : 0;
+            const profitPerPax = pax > 0 ? netProfit / pax : 0;
+            
+            return { salesUSD, totalSales, totalVariableCosts, totalFixedCosts, totalCosts, netProfit, costPerPax, profitPerPax };
+        }
+
+        function formatCurrency(value, currency) {
+            if (isNaN(value) || !isFinite(value)) return 'N/A';
+            const symbol = currency === 'USD' ? 'USD ' : 'ARS ';
+            const formattedValue = new Intl.NumberFormat('es-AR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+            return `${symbol}${formattedValue}`;
+        }
+        
+        function formatPercentage(value) {
+            if (isNaN(value) || !isFinite(value)) return 'N/A';
+            return (value * 100).toFixed(2) + '%';
+        }
+        
+        function renderTable() {
+            const exchangeRate = parseFloat(exchangeRateInput.value) || 1;
+            paqueteTableBody.innerHTML = '';
+            paqueteTableFooter.innerHTML = '';
+
+            let totalPaxSum = 0;
+            let totalSalesSum = 0;
+            let totalVariableCostsSum = 0;
+            let totalFixedCostsSum = 0;
+            let totalCostsSum = 0;
+            let totalProfitSum = 0;
+
+            renderHeader();
+
+            data.forEach((record) => {
+                const { totalSales, totalVariableCosts, totalFixedCosts, totalCosts, netProfit, costPerPax, profitPerPax } = calculateTotals(record, exchangeRate);
+                
+                totalPaxSum += record.PAX;
+                totalSalesSum += totalSales;
+                totalVariableCostsSum += totalVariableCosts;
+                totalFixedCostsSum += totalFixedCosts;
+                totalCostsSum += totalCosts;
+                totalProfitSum += netProfit;
+
+                const row = document.createElement('tr');
+                let rowHTML = `<td>${record.PAQUETE}</td><td>${record.PAX}</td><td>${formatCurrency(totalSales, currentCurrency)}</td>`;
+
+                if (isVariableCostsExpanded) {
+                    VARIABLE_COSTS_ARS.forEach(key => {
+                        const value = cleanAndParse(record[key]);
+                        const displayValue = currentCurrency === 'ARS' ? value : value / exchangeRate;
+                        rowHTML += `<td>${formatCurrency(displayValue, currentCurrency)}</td>`;
+                    });
+                    VARIABLE_COSTS_USD.forEach(key => {
+                        const value = cleanAndParse(record[key]);
+                        const displayValue = currentCurrency === 'USD' ? value : value * exchangeRate;
+                        rowHTML += `<td>${formatCurrency(displayValue, currentCurrency)}</td>`;
+                    });
+                } else {
+                    const ratio = totalSales > 0 ? totalVariableCosts / totalSales : 0;
+                    rowHTML += `<td>${formatCurrency(totalVariableCosts, currentCurrency)} <span class="ratio">(${formatPercentage(ratio)})</span></td>`;
+                }
+
+                if (isFixedCostsExpanded) {
+                    FIXED_COSTS_ARS.forEach(key => {
+                        const value = cleanAndParse(record[key]);
+                        const displayValue = currentCurrency === 'ARS' ? value : value / exchangeRate;
+                        rowHTML += `<td>${formatCurrency(displayValue, currentCurrency)}</td>`;
+                    });
+                } else {
+                    const ratio = totalSales > 0 ? totalFixedCosts / totalSales : 0;
+                    rowHTML += `<td>${formatCurrency(totalFixedCosts, currentCurrency)} <span class="ratio">(${formatPercentage(ratio)})</span></td>`;
+                }
+                
+                rowHTML += `<td>${formatCurrency(totalCosts, currentCurrency)}</td>`;
+                rowHTML += `<td>${formatCurrency(costPerPax, currentCurrency)}</td>`;
+                rowHTML += `<td class="${netProfit >= 0 ? 'profit' : 'loss'}">${formatCurrency(netProfit, currentCurrency)}</td>`;
+                rowHTML += `<td>${formatCurrency(profitPerPax, currentCurrency)}</td>`;
+                
+                row.innerHTML = rowHTML;
+                paqueteTableBody.appendChild(row);
+            });
+            
+            renderFooter(totalPaxSum, totalSalesSum, totalVariableCostsSum, totalFixedCostsSum, totalCostsSum, totalProfitSum);
+        }
+
+        function renderHeader() {
+            let headerHTML = '<tr><th rowspan="2">Paquete</th><th rowspan="2">Pax</th><th rowspan="2">Ventas</th>';
+
+            let variableHeaders = `<th colspan="${VARIABLE_COSTS_ARS.length + VARIABLE_COSTS_USD.length}">Costos Variables <span class="expand-toggle" id="toggleVariableCosts">${isVariableCostsExpanded ? '▼' : '▶'}</span></th>`;
+            let fixedHeaders = `<th colspan="${FIXED_COSTS_ARS.length}">Costos Fijos <span class="expand-toggle" id="toggleFixedCosts">${isFixedCostsExpanded ? '▼' : '▶'}</span></th>`;
+            
+            if (!isVariableCostsExpanded) { variableHeaders = `<th rowspan="2">Costos Variables <span class="expand-toggle" id="toggleVariableCosts">▶</span></th>`; }
+            if (!isFixedCostsExpanded) { fixedHeaders = `<th rowspan="2">Costos Fijos <span class="expand-toggle" id="toggleFixedCosts">▶</span></th>`; }
+
+            headerHTML += variableHeaders + fixedHeaders;
+            headerHTML += `<th rowspan="2">Total de Costos</th><th rowspan="2">Costo por PAX</th><th rowspan="2">Utilidad Neta</th><th rowspan="2">Rentabilidad por PAX</th></tr>`;
+            
+            if (isVariableCostsExpanded || isFixedCostsExpanded) {
+                headerHTML += '<tr>';
+                if (isVariableCostsExpanded) {
+                    VARIABLE_COSTS_ARS.concat(VARIABLE_COSTS_USD).forEach(h => headerHTML += `<th class="text-xs font-normal">${h.replace(/\s\(.*\)/, '')}</th>`);
+                }
+                if (isFixedCostsExpanded) {
+                    FIXED_COSTS_ARS.forEach(h => headerHTML += `<th class="text-xs font-normal">${h.replace(/\s\(.*\)/, '')}</th>`);
+                }
+                headerHTML += '</tr>';
+            }
+            
+            tableHead.innerHTML = headerHTML;
+            
+            const toggleVariableCosts = document.getElementById('toggleVariableCosts');
+            const toggleFixedCosts = document.getElementById('toggleFixedCosts');
+
+            if (toggleVariableCosts) {
+                toggleVariableCosts.addEventListener('click', () => {
+                    isVariableCostsExpanded = !isVariableCostsExpanded;
+                    renderTable();
+                });
+            }
+            if (toggleFixedCosts) {
+                toggleFixedCosts.addEventListener('click', () => {
+                    isFixedCostsExpanded = !isFixedCostsExpanded;
+                    renderTable();
+                });
+            }
+        }
+
+        function renderFooter(totalPaxSum, totalSalesSum, totalVariableCostsSum, totalFixedCostsSum, totalCostsSum, totalProfitSum) {
+            let footerHTML = `<tr class="totals-row"><td>Totales</td><td>${totalPaxSum}</td><td>${formatCurrency(totalSalesSum, currentCurrency)}</td>`;
+
+            const exchangeRate = parseFloat(exchangeRateInput.value) || 1;
+
+            if (isVariableCostsExpanded) {
+                let totalCosts = {};
+                data.forEach(record => {
+                    VARIABLE_COSTS_ARS.forEach(key => { totalCosts[key] = (totalCosts[key] || 0) + cleanAndParse(record[key]); });
+                    VARIABLE_COSTS_USD.forEach(key => { totalCosts[key] = (totalCosts[key] || 0) + cleanAndParse(record[key]); });
+                });
+                VARIABLE_COSTS_ARS.concat(VARIABLE_COSTS_USD).forEach(key => {
+                    const value = totalCosts[key] || 0;
+                    const isUSD = key.includes('(USD)');
+                    const displayValue = isUSD ? (currentCurrency === 'USD' ? value : value * exchangeRate) : (currentCurrency === 'ARS' ? value : value / exchangeRate);
+                    footerHTML += `<td>${formatCurrency(displayValue, currentCurrency)}</td>`;
+                });
+            } else {
+                const ratio = totalSalesSum > 0 ? totalVariableCostsSum / totalSalesSum : 0;
+                footerHTML += `<td>${formatCurrency(totalVariableCostsSum, currentCurrency)} <span class="ratio">(${formatPercentage(ratio)})</span></td>`;
+            }
+
+            if (isFixedCostsExpanded) {
+                let totalCosts = {};
+                data.forEach(record => {
+                    FIXED_COSTS_ARS.forEach(key => { totalCosts[key] = (totalCosts[key] || 0) + cleanAndParse(record[key]); });
+                });
+                FIXED_COSTS_ARS.forEach(key => {
+                    const value = totalCosts[key] || 0;
+                    const displayValue = currentCurrency === 'ARS' ? value : value / exchangeRate;
+                    footerHTML += `<td>${formatCurrency(displayValue, currentCurrency)}</td>`;
+                });
+            } else {
+                const ratio = totalSalesSum > 0 ? totalFixedCostsSum / totalSalesSum : 0;
+                footerHTML += `<td>${formatCurrency(totalFixedCostsSum, currentCurrency)} <span class="ratio">(${formatPercentage(ratio)})</span></td>`;
+            }
+            
+            const totalCostPerPax = totalPaxSum > 0 ? totalCostsSum / totalPaxSum : 0;
+            const totalProfitPerPax = totalPaxSum > 0 ? totalProfitSum / totalPaxSum : 0;
+
+            footerHTML += `<td>${formatCurrency(totalCostsSum, currentCurrency)}</td>`;
+            footerHTML += `<td>${formatCurrency(totalCostPerPax, currentCurrency)}</td>`;
+            footerHTML += `<td class="${totalProfitSum >= 0 ? 'profit' : 'loss'}">${formatCurrency(totalProfitSum, currentCurrency)}</td>`;
+            footerHTML += `<td>${formatCurrency(totalProfitPerPax, currentCurrency)}</td></tr>`;
+
+            paqueteTableFooter.innerHTML = footerHTML;
+        }
+
+        // Event Listeners
+        exchangeRateInput.addEventListener('input', renderTable);
+        currencyToggle.addEventListener('change', () => {
+            currentCurrency = currencyToggle.checked ? 'ARS' : 'USD';
+            currentCurrencyLabel.textContent = currentCurrency;
+            otherCurrencyLabel.textContent = currencyToggle.checked ? 'USD' : 'ARS';
+            renderTable();
+        });
+        
+        // Initial render
+        renderTable();
+    </script>
+</body>
+</html>

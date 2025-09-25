@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recetario de Productos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* * ESTILOS REPLICADOS DE LA PORTADA */
+        body { font-family: 'Inter', sans-serif; background-color: #F8F7F4; color: #2c3e50; margin: 0; }
+        .accent-color { color: #B85042; }
+        .secondary-color { color: #7d5a5a; } 
+        
+        .nav-bg { 
+            background-color: #BE272E; 
+            padding: 1rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+        .nav-link { color: white; text-decoration: none; margin: 0 20px; font-weight: 500; transition: opacity 0.2s; }
+        .nav-link:hover { opacity: 0.8; } 
+
+        /* Estilos de Contenido */
+        .report-card { background-color: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 24px; }
+        .recipe-table { width: 100%; border-collapse: collapse; }
+        .recipe-table th, .recipe-table td { padding: 10px 15px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .recipe-table th { background-color: #f1f5f9; font-weight: 600; }
+        .total-row { 
+            font-weight: bold; 
+            background-color: #e2e8f0; 
+            border-top: 2px solid #B85042; 
+        }
+
+        /* Estilos para celdas editables y botón guardar */
+        .editable-cell {
+            background-color: #fffbeb; 
+            border: 1px dashed #B85042; 
+            min-width: 80px;
+            cursor: text;
+        }
+        .bg-save-button {
+             background-color: #B85042; 
+        }
+        .hover-bg-save-button:hover {
+             background-color: #8c3b31; 
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bg">
+        <img src="LogoINKA.png" alt="Logo de INKA" class="h-20 ml-4">
+        
+        <div class="nav-links mr-4">
+            <a href="index.html" class="nav-link">Portada</a>
+            <a href="ReportedeGestion.html" class="nav-link">Reporte de Gestión</a>
+            <a href="Rentabilidadporpaquete.html" class="nav-link">Rentabilidad por Paquete</a>
+            <a href="Recetario.html" class="nav-link">Recetario</a>
+        </div>
+    </nav>
+    
+    <main class="flex-1 p-6 md:p-10 max-w-5xl mx-auto">
+        <header class="mb-6 pb-4 border-b border-gray-200">
+            <h1 class="text-3xl font-bold accent-color">Recetario de Productos</h1>
+            <p class="text-xl font-medium secondary-color">Detalle y costos de cada sub-producto</p>
+        </header>
+
+        <section id="recetario_selectors" class="view active">
+            <div class="report-card">
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <div class="flex-1">
+                        <label for="productSelect" class="block text-sm font-medium text-gray-700 mb-1">Producto Principal</label>
+                        <select id="productSelect" class="w-full p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#B85042]">
+                            <option value="">-- Seleccionar Producto --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex-1">
+                        <label for="subproductSelect" class="block text-sm font-medium text-gray-700 mb-1">Sub-Producto</label>
+                        <select id="subproductSelect" class="w-full p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#B85042]" disabled>
+                            <option value="">-- Seleccionar Sub-Producto --</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="text-left mb-4">
+                    <button id="exportCodeBtn" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-300">
+                        Mostrar Todas las Recetas (JSON)
+                    </button>
+                </div>
+                
+                <div class="text-right mb-4 hidden" id="actionButtonsContainer">
+                    </div>
+                
+                <div id="recipeDetail" class="mt-6 p-4 border border-gray-200 rounded-lg hidden">
+                    </div>
+                
+                <p id="initialMessage" class="text-gray-500 text-center mt-8">Selecciona un producto y un sub-producto para ver su receta.</p>
+
+                <div id="exportArea" class="mt-8 hidden">
+                    <h3 class="text-xl font-bold secondary-color mb-2">Código de Recetas Actuales (JSON)</h3>
+                    <p class="text-sm text-gray-600 mb-2">Copia el contenido de esta caja y envíamelo.</p>
+                    <textarea id="exportedJson" class="w-full p-4 border border-gray-400 rounded-md font-mono text-sm" rows="15" readonly></textarea>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="mt-20 text-center text-gray-500 text-sm border-t pt-4">
+            <p>Dashboard Financiero | Desarrollado para la gestión de datos operativos.</p>
+            <p class="mt-1">Última Actualización: Septiembre 2025</p>
+        </footer>
+    </main>
+
+    <script>
+        // ** ----------------------------------------------------------- **
+        // ** PARTE 1: DEFINICIÓN INICIAL Y LÓGICA DE ALMACENAMIENTO     **
+        // ** ----------------------------------------------------------- **
+        
+        const BASE_COSTS = [
+            { "Item": "Mantenimiento Mulas", "Cantidad": 1, "Importe": 12.262, "CostoUnitario": 12.262 },
+            { "Item": "Prorrateo Gastos Fijos", "Cantidad": 1, "Importe": 48.179, "CostoUnitario": 48.179 },
+            { "Item": "Sueldo Arrieros", "Cantidad": 1, "Importe": 5.722, "CostoUnitario": 5.722 }
+        ];
+
+        const TRAMO_COSTS = {
+            "Transporte de Mulas - Quebrada Horcones a Plaza de Mulas": 100.000,
+            "Transporte de Mulas - Quebrada Horcones a Confluencia": 50.000,
+            "Transporte de Mulas - Quebrada Vacas a Plaza Argentina": 200.000,
+            "Transporte de Mulas - Quebrada Vacas a Casa de Piedra": 100.000,
+            "Transporte de Mulas - Quebrada Vacas a Pampa de Leñas": 50.000,
+            "Transporte de Mulas - Quebrada Horcones a Plaza Argentina": 200.000,
+            "Transporte de Mulas - Quebrada Horcones a Casa de Piedra": 100.000
+        };
+        
+        /* * 🚨 ¡AQUÍ DEBES PEGAR TU CÓDIGO JSON DE RECETAS PARA HACERLO PERMANENTE! 🚨
+        * Si no tienes tu JSON, el código usará esta estructura de base (vacía).
+        */
+        let RECIPES_DATA_PERMANENT = {
+            "Transporte Cargas": {},
+            "Comidas por Pension": { "Pension Alimentos": [] }, 
+            "Alojamientos": { "Alojamiento en Campamento Altura": [] },
+            "Porteos": { "Porteo de": [] },
+            "Servicio de Guiadas": { "Guiadas de": [] }
+        };
+
+        let RECIPES_DATA = {};
+        const SAVED_DATA_KEY = 'saved_recipes_data';
+
+        function createMuleRecipe(tramoCost) {
+            const recipe = [{ "Item": "Tramo", "Cantidad": 1, "Importe": tramoCost, "CostoUnitario": tramoCost }];
+            recipe.push(...BASE_COSTS.map(item => ({...item}))); 
+            return recipe;
+        }
+        
+        function populateInitialMuleRecipes(dataStructure) {
+             for (const subproduct in TRAMO_COSTS) {
+                const tramoCost = TRAMO_COSTS[subproduct];
+                const recipe = createMuleRecipe(tramoCost);
+                dataStructure["Transporte Cargas"][subproduct] = recipe;
+            }
+        }
+        
+        function loadRecipesData() {
+            const savedData = localStorage.getItem(SAVED_DATA_KEY);
+            
+            // 1. Usar la data permanente como base
+            RECIPES_DATA = JSON.parse(JSON.stringify(RECIPES_DATA_PERMANENT));
+
+            // 2. Si existe data guardada localmente (y es válida), la usamos.
+            if (savedData) {
+                try {
+                    const localData = JSON.parse(savedData);
+                    // Combina los datos locales con la estructura permanente para no perder categorías
+                    Object.assign(RECIPES_DATA, localData);
+                } catch (e) {
+                    console.error("Error al cargar data de localStorage. Usando data permanente.");
+                    // Si falla, RECIPES_DATA ya tiene la data permanente.
+                }
+            }
+            
+            // 3. Asegurarse de que las recetas de mula se generen por si faltan
+            populateInitialMuleRecipes(RECIPES_DATA);
+        }
+
+        function saveRecipesData() {
+            try {
+                // Preparamos los datos para guardar (limpiamos la data de mulas generada dinámicamente)
+                const dataToStore = JSON.parse(JSON.stringify(RECIPES_DATA));
+                
+                // Limpiamos los arrays para asegurar el formato correcto
+                for (const productKey in dataToStore) {
+                    for (const subproductKey in dataToStore[productKey]) {
+                       if(Array.isArray(dataToStore[productKey][subproductKey])) {
+                           dataToStore[productKey][subproductKey] = dataToStore[productKey][subproductKey].map(item => ({
+                               "Item": item.Item,
+                               "Cantidad": item.Cantidad,
+                               "Importe": item.Importe,
+                               "CostoUnitario": item.CostoUnitario
+                           }));
+                       }
+                    }
+                }
+                
+                localStorage.setItem(SAVED_DATA_KEY, JSON.stringify(dataToStore));
+                alert("¡Recetas guardadas exitosamente en tu navegador!");
+                
+                loadRecipesData(); 
+                isEditing = false; 
+                showRecipeDetails(); 
+            } catch (e) {
+                alert("Error al guardar los datos. Consulta la consola para más detalles.");
+                console.error("Error al guardar en localStorage:", e);
+            }
+        }
+        
+        // ** ----------------------------------------------------------- **
+        // ** PARTE 2: LÓGICA DE INTERFAZ Y EVENT LISTENERS              **
+        // ** ----------------------------------------------------------- **
+
+        const productSelect = document.getElementById('productSelect');
+        const subproductSelect = document.getElementById('subproductSelect');
+        const recipeDetailDiv = document.getElementById('recipeDetail');
+        const initialMessage = document.getElementById('initialMessage');
+        const actionButtonsContainer = document.getElementById('actionButtonsContainer');
+        const exportArea = document.getElementById('exportArea');
+        const exportedJson = document.getElementById('exportedJson');
+        let isEditing = false;
+        
+        function parseNumeric(value) {
+            const cleaned = String(value).replace(/[^0-9.,-]+/g, '')
+                                        .replace(',', '.');
+            return parseFloat(cleaned) || 0;
+        }
+
+        function formatCurrency(value) {
+            if (isNaN(value) || !isFinite(value)) return 'USD 0.000';
+            const formattedValue = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 3, 
+                maximumFractionDigits: 3
+            }).format(value);
+            return formattedValue;
+        }
+
+        function populateProductSelect() {
+            productSelect.innerHTML = '<option value="">-- Seleccionar Producto --</option>'; 
+            const products = Object.keys(RECIPES_DATA);
+            products.forEach(product => {
+                const option = new Option(product, product);
+                productSelect.appendChild(option);
+            });
+        }
+
+        function populateSubproductSelect() {
+            subproductSelect.innerHTML = '<option value="">-- Seleccionar Sub-Producto --</option>';
+            recipeDetailDiv.classList.add('hidden');
+            initialMessage.classList.remove('hidden');
+            actionButtonsContainer.classList.add('hidden');
+            subproductSelect.disabled = true;
+
+            const selectedProduct = productSelect.value;
+            if (selectedProduct) {
+                const subproducts = Object.keys(RECIPES_DATA[selectedProduct]);
+                subproducts.forEach(subproduct => {
+                    const option = new Option(subproduct, subproduct);
+                    subproductSelect.appendChild(option);
+                });
+                subproductSelect.disabled = (subproducts.length === 0);
+            }
+        }
+
+        function showRecipeDetails() {
+            recipeDetailDiv.innerHTML = '';
+            const selectedProduct = productSelect.value;
+            const selectedSubproduct = subproductSelect.value;
+            
+            exportArea.classList.add('hidden');
+
+            if (selectedProduct && selectedSubproduct) {
+                initialMessage.classList.add('hidden');
+                recipeDetailDiv.classList.remove('hidden');
+                actionButtonsContainer.classList.remove('hidden');
+                
+                if (isEditing) {
+                    renderEditMode(selectedProduct, selectedSubproduct);
+                } else {
+                    renderViewMode(selectedProduct, selectedSubproduct);
+                }
+            } else {
+                recipeDetailDiv.classList.add('hidden');
+                initialMessage.classList.remove('hidden');
+                actionButtonsContainer.classList.add('hidden');
+            }
+        }
+
+        function renderViewMode(selectedProduct, selectedSubproduct) {
+            // 1. Renderizar botones de acción para el modo VISTA
+            actionButtonsContainer.innerHTML = `
+                <button id="editRecipeBtn" class="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-300">
+                    Editar Receta
+                </button>
+            `;
+            document.getElementById('editRecipeBtn').addEventListener('click', () => {
+                isEditing = true;
+                showRecipeDetails();
+            });
+
+            // 2. Renderizar la tabla en modo VISTA
+            const recipe = RECIPES_DATA[selectedProduct][selectedSubproduct];
+            const totalCost = recipe.reduce((sum, item) => sum + parseNumeric(item.CostoUnitario), 0); 
+            
+            let tableHTML = `<h3 class="text-xl font-semibold secondary-color mb-4">${selectedSubproduct}</h3>`;
+            tableHTML += `<table class="recipe-table w-full border-collapse">`;
+            tableHTML += `<thead><tr><th>Item</th><th>Cantidad</th><th class="text-right">Importe</th><th class="text-right">Costo Unitario</th></tr></thead>`;
+            tableHTML += `<tbody id="recipeBody">`;
+            
+            if (recipe && recipe.length > 0) {
+                recipe.forEach(item => {
+                    tableHTML += `<tr>`;
+                    tableHTML += `<td>${item.Item}</td>`;
+                    tableHTML += `<td>${item.Cantidad}</td>`;
+                    tableHTML += `<td class="text-right">${formatCurrency(item.Importe)}</td>`; 
+                    tableHTML += `<td class="text-right">${formatCurrency(item.CostoUnitario)}</td>`; 
+                    tableHTML += `</tr>`;
+                });
+            } else {
+                tableHTML += `<tr><td colspan="4" class="text-center text-gray-500">Aún no se ha cargado la receta/estructura de costos.</td></tr>`;
+            }
+
+            tableHTML += `</tbody>`;
+            tableHTML += `<tfoot><tr class="total-row"><td colspan="3" class="text-right">Costo Total del Sub-Producto:</td><td class="text-right">${formatCurrency(totalCost)}</td></tr></tfoot>`;
+            tableHTML += `</table>`;
+
+            recipeDetailDiv.innerHTML = tableHTML;
+        }
+
+        function renderEditMode(selectedProduct, selectedSubproduct) {
+            // 1. Renderizar botones de acción para el modo EDICIÓN
+            actionButtonsContainer.innerHTML = ''; 
+            
+            // Botón Guardar Cambios (con estilo visible)
+            const saveBtn = document.createElement('button');
+            saveBtn.id = 'saveRecipeBtn';
+            saveBtn.className = 'px-4 py-2 bg-save-button text-white font-bold rounded-lg hover-bg-save-button transition duration-300 mr-2';
+            saveBtn.textContent = 'Guardar Cambios';
+            actionButtonsContainer.appendChild(saveBtn);
+            
+            // Botón Cancelar Edición
+            const cancelBtn = document.createElement('button');
+            cancelBtn.id = 'cancelEditBtn';
+            cancelBtn.className = 'px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-300';
+            cancelBtn.textContent = 'Cancelar Edición';
+            actionButtonsContainer.appendChild(cancelBtn);
+            
+            saveBtn.addEventListener('click', () => {
+                saveEditedRecipe(selectedProduct, selectedSubproduct);
+            });
+            cancelBtn.addEventListener('click', () => {
+                isEditing = false;
+                showRecipeDetails();
+            });
+
+            // 2. Renderizar la tabla en modo EDICIÓN
+            const recipe = RECIPES_DATA[selectedProduct][selectedSubproduct];
+            
+            let tableHTML = `<h3 class="text-xl font-semibold accent-color mb-4">Editando: ${selectedSubproduct}</h3>`;
+            tableHTML += `<p class="text-sm text-gray-600 mb-4">Haz doble clic en una celda para editar. Para valores decimales, usa el punto (".") en lugar de la coma. Usa el botón "Agregar Fila" para añadir un nuevo item.</p>`;
+            tableHTML += `<table class="recipe-table w-full border-collapse" id="editableRecipeTable">`;
+            tableHTML += `<thead><tr><th>Item</th><th>Cantidad</th><th class="text-right">Importe</th><th class="text-right">Costo Unitario</th></tr></thead>`;
+            tableHTML += `<tbody id="recipeEditBody">`;
+            
+            if (recipe && recipe.length > 0) {
+                recipe.forEach((item, index) => {
+                    tableHTML += `<tr data-index="${index}">`;
+                    tableHTML += `<td contenteditable="true" class="editable-cell text-left" data-field="Item">${item.Item}</td>`;
+                    tableHTML += `<td contenteditable="true" class="editable-cell text-right" data-field="Cantidad">${item.Cantidad}</td>`;
+                    tableHTML += `<td contenteditable="true" class="editable-cell text-right" data-field="Importe">${item.Importe}</td>`; 
+                    tableHTML += `<td contenteditable="true" class="editable-cell text-right" data-field="CostoUnitario">${item.CostoUnitario}</td>`; 
+                    tableHTML += `</tr>`;
+                });
+            } else {
+                tableHTML += `<tr><td colspan="4" class="text-center text-gray-500">Sin receta. Usa el botón "Agregar Fila" para comenzar.</td></tr>`;
+            }
+
+            tableHTML += `</tbody>`;
+            tableHTML += `</table>`;
+            tableHTML += `<div class="mt-4"><button id="addRowBtn" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-300">+ Agregar Fila</button></div>`;
+
+            recipeDetailDiv.innerHTML = tableHTML;
+            
+            document.getElementById('addRowBtn').addEventListener('click', addRowToEditableTable);
+        }
+        
+        function addRowToEditableTable() {
+            const tableBody = document.getElementById('recipeEditBody');
+            const newRow = tableBody.insertRow();
+            
+            newRow.innerHTML = `
+                <td contenteditable="true" class="editable-cell text-left" data-field="Item">Nuevo Item</td>
+                <td contenteditable="true" class="editable-cell text-right" data-field="Cantidad">1</td>
+                <td contenteditable="true" class="editable-cell text-right" data-field="Importe">0.000</td>
+                <td contenteditable="true" class="editable-cell text-right" data-field="CostoUnitario">0.000</td>
+            `;
+        }
+
+        function saveEditedRecipe(product, subproduct) {
+            const tableBody = document.getElementById('recipeEditBody');
+            const rows = tableBody.querySelectorAll('tr');
+            const newRecipe = [];
+            
+            try {
+                rows.forEach(row => {
+                    const itemCell = row.querySelector('[data-field="Item"]');
+                    const cantidadCell = row.querySelector('[data-field="Cantidad"]');
+                    const importeCell = row.querySelector('[data-field="Importe"]');
+                    const costoUnitarioCell = row.querySelector('[data-field="CostoUnitario"]');
+
+                    if (itemCell) {
+                        const newItem = {
+                            "Item": itemCell.textContent.trim(),
+                            "Cantidad": parseNumeric(cantidadCell.textContent),
+                            "Importe": parseNumeric(importeCell.textContent),
+                            "CostoUnitario": parseNumeric(costoUnitarioCell.textContent)
+                        };
+
+                        if (!newItem.Item) throw new Error("El campo 'Item' no puede estar vacío.");
+                        
+                        newRecipe.push(newItem);
+                    }
+                });
+
+                if (newRecipe.length === 0) {
+                    if (!confirm("Estás guardando una receta vacía. ¿Estás seguro?")) return;
+                }
+                
+                RECIPES_DATA[product][subproduct] = newRecipe;
+                saveRecipesData(); 
+                
+            } catch (e) {
+                alert(`Error al guardar la receta. Revisa si hay campos vacíos o si el formato numérico es incorrecto (usar punto decimal).\n\nDetalles del error: ${e.message}`);
+                console.error("Error al guardar la receta:", e);
+            }
+        }
+        
+        // ** ----------------------------------------------------------- **
+        // ** PARTE 3: LÓGICA DE EXPORTACIÓN               **
+        // ** ----------------------------------------------------------- **
+
+        function exportRecipesToJson() {
+            // Usamos la data guardada en Local Storage si existe, o la data en memoria.
+            const dataToExport = localStorage.getItem(SAVED_DATA_KEY);
+            let jsonString = '';
+
+            if (dataToExport) {
+                try {
+                    // Convertir el JSON a un objeto y luego a un string con formato (indentación)
+                    const dataObject = JSON.parse(dataToExport);
+                    jsonString = JSON.stringify(dataObject, null, 2);
+                } catch (e) {
+                    // Si el local storage está corrupto, exportamos la data en memoria (RECIPES_DATA)
+                    jsonString = JSON.stringify(RECIPES_DATA, null, 2);
+                }
+            } else {
+                // Si no hay nada guardado localmente, exportamos la data actual en memoria.
+                jsonString = JSON.stringify(RECIPES_DATA, null, 2);
+            }
+            
+            exportedJson.value = jsonString;
+            exportArea.classList.remove('hidden');
+            
+            exportArea.scrollIntoView({ behavior: 'smooth' });
+
+            alert("El código de todas tus recetas ha sido cargado en el área de texto 'Código de Recetas Actuales (JSON)'. Copia el texto y envíamelo.");
+        }
+
+
+        // ** Event Listeners **
+        productSelect.addEventListener('change', () => {
+            isEditing = false;
+            populateSubproductSelect();
+        });
+        
+        subproductSelect.addEventListener('change', () => {
+            isEditing = false;
+            showRecipeDetails();
+        });
+        
+        document.getElementById('exportCodeBtn').addEventListener('click', exportRecipesToJson);
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecipesData(); 
+            populateProductSelect();
+        });
+    </script>
+</body>
+</html>
