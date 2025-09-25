@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Gestión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8F7F4; color: #2c3e50; }
+        .accent-color { color: #B85042; }
+        .secondary-color { color: #7d5a5a; } /* Color Secundario Actualizado */
+        
+        /* Clases de Navegación Actualizadas para Flex y Color Rojo */
+        .nav-bg { 
+            background-color: #BE272E; /* Nuevo color principal de la barra */
+            padding: 1rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+        .nav-link { color: white; text-decoration: none; margin: 0 20px; font-weight: 500; } /* Margen actualizado */
+        
+        .report-card { background-color: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 24px; }
+        .report-table { width: 100%; border-collapse: separate; border-spacing: 0 0px; }
+        .report-table th, .report-table td { padding: 5px 10px; text-align: left; }
+        
+        /* Specific row styling for hierarchy */
+        .total-revenue-row td { background-color: #d1fae5; font-weight: 700; color: #2E8B57; border-radius: 0px; }
+        .total-costs-row td { background-color: #ffb8c1; font-weight: 700; color: #ff0000; border-radius: 0px; }
+        .category-row td { background-color: #ffe2e2; font-weight: 600; color: #9e1850; border-radius: 0px; cursor: pointer; }
+        .sub-category-row td { background-color: #F5F5F5; font-weight: 600; color: #036666; border-radius: 0px; cursor: pointer; padding-left: 2rem; }
+        .sales-category-row td { background-color: #F5F5F5; font-weight: 600; color: #036666; border-radius: 0px; cursor: pointer; }
+        .sub-item-row td { background-color: white; font-size: 0.9rem; color: #777; padding-left: 4rem; }
+        .sub-item-row .value-cell { color: #555; }
+        
+        .profit-row td { background-color: #d1fae5; font-weight: 700; color: #065f46; border-radius: 0px; }
+        .negative-profit-row td { background-color: #fee2e2; font-weight: 700; color: #991b1b; border-radius: 0px; }
+
+        /* Currency Switch (Manteniendo tus estilos) */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #BE272E; } /* Ajuste de color del slider */
+        input:checked + .slider:before { transform: translateX(26px); }
+        .currency-label { position: absolute; top: 8px; font-size: 12px; color: white; }
+        .usd-label { left: 8px; }
+        .ars-label { right: 8px; }
+
+        /* Toggle Icon */
+        .toggle-icon { font-size: 1.2rem; display: inline-block; width: 1.2rem; text-align: center; vertical-align: middle; transition: transform 0.2s ease-in-out; margin-right: 0.5rem; }
+        .toggle-icon.rotated { transform: rotate(45deg); }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <nav class="nav-bg">
+        <img src="LogoINKA.png" alt="Logo de INKA" class="h-20 ml-4">
+        <div class="nav-links mr-4">
+            <a href="Portada.html" class="nav-link">Portada</a>
+            <a href="ReportedeGestion.html" class="nav-link">Reporte de Gestión</a>
+            <a href="Rentabilidadporpaquete.html" class="nav-link">Rentabilidad por Paquete</a>
+            <a href="Recetario.html" class="nav-link">Recetario</a>
+        </div>
+    </nav>
+    
+    <main class="flex-1 p-6 md:p-10">
+        <header class="mb-6 pb-4 border-b border-gray-200 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold accent-color">Reporte de Gestión: Temporada 2024/2025</h1>
+                <p class="text-xl font-medium secondary-color">Análisis de rentabilidad segun naturaleza</p>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 bg-white p-2 rounded-xl shadow-md">
+                    <label for="exchangeRate" class="text-xs font-medium text-gray-700">TC USD/ARS:</label>
+                    <input type="number" id="exchangeRate" value="1200" step="10" class="w-20 text-center p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-secondary-color">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span id="currentCurrencyLabel" class="text-xs text-gray-600 font-medium">USD</span>
+                    <label class="switch">
+                        <input type="checkbox" id="currencyToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="otherCurrencyLabel" class="text-xs text-gray-600 font-medium">ARS</span>
+                </div>
+            </div>
+        </header>
+
+        <section id="reporte_general" class="view active">
+            <div class="report-card">
+                <table class="report-table">
+                    <tbody id="reportTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // *** T O D A   L A   L Ó G I C A   D E L   R E P O R T E   ( S I N   M O D I F I C A R ) ***
+        
+        // Default currency to start with
+        let currentCurrency = 'USD';
+
+        // Data in their original currencies, now with all sub-items
+        const revenueData = {
+            'GO': { subItems: { 'GON': { usd: 779375.00 }, 'GOPM': { usd: 1410.00 }, 'GOT': { usd: 85062.00 } } },
+            'GP': { subItems: { 'GPN': { usd: 740446.00 }, 'GPT': { usd: 286101.00 } } },
+            'IK': { subItems: { 'IKG': { usd: 12050.00 }, 'IKN': { usd: 667784.00 }, 'IKNEXT': { usd: 332705.00 }, 'IKT': { usd: 415156.00 } } },
+            'SS': { subItems: { 'SSCF': { usd: 990.00 }, 'SSN': { usd: 63012.00 }, 'SSPF': { usd: 3616.00 }, 'SSPM': { usd: 1140.00 }, 'SST': { usd: 17677.00 }, 'SSV': { usd: 1920.00 } } },
+            'TK': { subItems: { 'TKCB': { usd: 20368.00 }, 'TKCB PRIV': { usd: 3950.00 }, 'TKCF': { usd: 915.00 }, 'TKPF': { usd: 8712.00 }, 'TKPM': { usd: 6950.00 } } },
+            'Otros Cerros': { subItems: { 'TKTILCAL': { usd: 3945.00 }, 'AUCB': { usd: 5270.00 }, 'AUCBGP': { usd: 2650.00 }, 'KILI': { usd: 33920.00 }, 'VLLGP': { usd: 850.00 }, 'AUTK': { usd: 19254.00 }, 'AUTKGP': { usd: 2200.00 }, 'CRU': { usd: 4010.00 }, 'TKAT': { usd: 208.00 }, 'TKEV': { usd: 4700.00 } } },
+            'Venta Campamentos': { usd: 429275.00 }
+        };
+
+        const costData = {
+            'Costos Estructura': {
+                'Costos Fijos': {
+                    'Servicios': {
+                        'Internet': { ars: 12016939 },
+                        'IMPUESTOS Y SERVICIOS GRAL': { ars: 19950084 },
+                        'INTERNET OFICINAS (JBJ Y DEPO)': { ars: 4680000 },
+                        'MOVISTAR NO DESCONTADO': { ars: 2160000 },
+                        'PATENTES E INMOBILIARIO': { ars: 501084 }
+                    },
+                    'Honorarios': {
+                        'OSO HONORARIOS Y SISTEMA': { ars: 24202655.28 },
+                        'LEOPOLDO SISTEMA': { ars: 4984800 },
+                        'ABOGADO LUIS BUTTERFIELD': { ars: 6000000 },
+                        'CONTADORES USA': { ars: 0 },
+                        'CONTADOR IMPUESTOS': { ars: 7695600 },
+                        'CONTADOR SUELDOS Y CONTABILIDAD': { ars: 14820000 },
+                        'SERVICIO HIGIENE SEGURIDAD': { ars: 1680000 }
+                    },
+                    'Limpieza': { 'SERVICIOS LIMPIEZA': { ars: 5760000 } },
+                    'Seguros': {
+                        'SEGUROS PERSONAL (ACCIDENTES PERSONALES)': { ars: 360000 },
+                        'SEGUROS PROPIOS': { ars: 3338400 }
+                    }
+                },
+                'Costos de Personal': {
+                    'Sueldos y Jornales': {
+                        'SUELDOS JERARQUICOS': { ars: 105400800 },
+                        'SUELDOS ADMINISTRACION': { ars: 88041697.56 },
+                        'SUELDOS COMERCIAL': { ars: 92881123.74 },
+                        'SUELDOS DEPOSITO': { ars: 44836114.38 },
+                        'ARRIERO': { ars: 24609612 },
+                        'JONATAN FABRIZIO': { ars: 12480000 }
+                    },
+                    'Cargas Sociales': { 'F 931 ST/ALTURA SAS': { ars: 21600000 }, 'F 931 AESA': { ars: 21600000 } },
+                    'Cargas Sindicales': { 'SINDICATO UTHGRA': { ars: 3523836 }, 'SINDICATO FAECYS': { ars: 3528096 }, 'SINDICATO CEC': { ars: 3600000 } },
+                    'Honorarios': { 'GESTION DEL PERSONAL': { ars: 11520000 } },
+                    'Hospedajes': { 'Hospedaje personal staff penitentes': { ars: 2000000 } }
+                },
+                'Costos de Mantenimiento y Reparacion': {
+                    'Mantenimiento campamentos': {
+                        'Pedidos especiales mantenimiento campamentos': { ars: 116386875.75 },
+                        'Ferreteria campamentos': { ars: 13192813.47 }
+                    }
+                },
+                'Costos de Mantenimiento Mulas': { 'Mulas': { 'MANTENIMIENTO MULAS FUERA TEMPORADA Y SANIDAD 2': { ars: 9000000 } } },
+                'Costos de Publicidad': {
+                    'Merchandising': { 'Merchandising': { ars: 4000000 } },
+                    'Honorarios': { 'KEVIN CORIA - REDES SOCIALES': { ars: 13803000 }, 'IGNACIO TASSI - APOYO WEB': { ars: 5280000 } }
+                },
+                'Otros Costos': {
+                    'FFT': { 'FFT': { ars: 10254250 } },
+                    'Alquileres': { 'ALQUILER CAMPO': { ars: 1044000 } },
+                    'Otros Gastos': { 'VARIOS DE CAJA (Provisiones)': { ars: 12000000 }, 'VIAJES AL CAMPO SEMANALES': { ars: 4800000 } }
+                }
+            },
+            'Costos Variables': {
+                'Costos Variables Directos': {
+                    'Transfer': { ars: 140816760 },
+                    'Permiso Parque': { ars: 430130075 },
+                    'Comidas (Campamentos)': { ars: 2346896 },
+                    'Hospedaje-Hoteles': { ars: 56475254 },
+                    'Guías': { ars: 537465576 },
+                    'Porteos Clientes': { ars: 238902000 },
+                    'Arrieros Clientes': { ars: 23187509.5 }
+                },
+                'Costos Variables Indirectos': {
+                    'Arrieros Internos': { ars: 56027490.5 },
+                    'Porteos Internos': { ars: 113677200 }
+                }
+            }
+        };
+        
+        const formatNumber = (num) => {
+            const currencyCode = currentCurrency === 'ARS' ? 'ARS' : 'USD';
+            const options = {
+                style: 'currency',
+                currency: currencyCode,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            };
+            
+            if (currentCurrency === 'USD') {
+                options.minimumFractionDigits = 2;
+                options.maximumFractionDigits = 2;
+            }
+
+            return new Intl.NumberFormat('es-AR', options).format(num);
+        };
+        
+        const convertToCurrent = (value, exchangeRate) => {
+            if (currentCurrency === 'USD') {
+                if (value.usd) return value.usd;
+                if (value.ars) return value.ars / exchangeRate;
+            } else { // ARS
+                if (value.ars) return value.ars;
+                if (value.usd) return value.usd * exchangeRate;
+            }
+            return 0;
+        };
+
+        const generateTableRows = (data, level = 0, parentId = '') => {
+            let html = '';
+            for (const key in data) {
+                const isFinalItem = (data[key].ars !== undefined || data[key].usd !== undefined);
+                const itemTotal = calculateNestedTotal(data[key]);
+                const itemId = `${parentId}-${key.replace(/\s+/g, '-')}`;
+                const hasChildren = !isFinalItem && Object.keys(data[key]).length > 0;
+                const toggleIcon = hasChildren ? `<span class="toggle-icon">+</span>` : '';
+                
+                let rowClass = '';
+                let padding = 0;
+
+                if (level === 0) { // Main category
+                    rowClass = 'category-row';
+                    padding = 0;
+                } else if (level === 1) { // Sub-category
+                    rowClass = 'sub-category-row';
+                    padding = 2;
+                } else { // Sub-item or deeper level
+                    rowClass = 'sub-item-row';
+                    padding = 4 + (level - 2) * 2;
+                }
+                
+                html += `<tr class="${rowClass}" onclick="${hasChildren ? `toggleDetails('${itemId}')` : ''}" style="padding-left: ${padding}rem;">`;
+                html += `<td style="padding-left: ${padding}rem;">${toggleIcon}${key}</td>`;
+                html += `<td class="value-cell">${formatNumber(itemTotal)}</td>`;
+                html += `</tr>`;
+                
+                if (hasChildren) {
+                    html += `<tr id="details-${itemId}" class="hidden-details" style="display:none;"><td colspan="2"><table style="width: 100%;"><tbody>`;
+                    html += generateTableRows(data[key], level + 1, itemId);
+                    html += `</tbody></table></td></tr>`;
+                }
+            }
+            return html;
+        };
+
+        const calculateNestedTotal = (data) => {
+            let total = 0;
+            const exchangeRate = parseFloat(document.getElementById('exchangeRate').value);
+
+            // Case 1: Final Item (has 'ars' or 'usd' value)
+            if (data.ars !== undefined || data.usd !== undefined) {
+                return convertToCurrent(data, exchangeRate);
+            }
+            
+            // Case 2: Revenue Item with 'subItems'
+            if (data.subItems) {
+                for (const subItem in data.subItems) {
+                    total += calculateNestedTotal(data.subItems[subItem]);
+                }
+            } else {
+                // Case 3: Nested structure (e.g., Costos Estructura)
+                for (const key in data) {
+                    total += calculateNestedTotal(data[key]);
+                }
+            }
+            return total;
+        };
+        
+        const updateReport = () => {
+            const tableBody = document.getElementById('reportTableBody');
+            tableBody.innerHTML = '';
+            
+            // Calculate total revenue and costs
+            const totalRevenue = calculateNestedTotal(revenueData);
+            const totalCosts = calculateNestedTotal(costData);
+            const totalProfit = totalRevenue - totalCosts;
+
+            let html = '';
+
+            // Encabezado para la sección de ventas
+            html += `<tr><td colspan="2" class="text-xl font-bold text-gray-800 pt-4 pb-2">Informe Económico por naturaleza de gastos</td></tr>`;
+            html += `<tr><td colspan="2" class="text-xl font-bold text-gray-800 pt-4 pb-2"></td></tr>`;
+            
+            html += `<tr class="total-revenue-row"><td colspan="2" class="font-bold">Total de Ventas: ${formatNumber(totalRevenue)}</td></tr>`;
+            html += `<tr class="sales-category-row"><td colspan="2">Ventas por Clasificación</td></tr>`;
+            
+            // --- Sales breakdown (simple expansion) ---
+            for (const key in revenueData) {
+                const item = revenueData[key];
+                const hasSubItems = item.subItems !== undefined;
+                const toggleIcon = hasSubItems ? `<span class="toggle-icon">+</span>` : '';
+                let itemTotal = hasSubItems ? calculateNestedTotal(item.subItems) : calculateNestedTotal(item);
+                const itemId = `sales-${key.replace(/\s+/g, '-')}`;
+
+                html += `<tr class="sub-item-row" onclick="${hasSubItems ? `toggleDetails('${itemId}')` : ''}" style="cursor: ${hasSubItems ? 'pointer' : 'default'};">`;
+                html += `<td style="padding-left: 2rem;">${toggleIcon}${key}</td>`;
+                html += `<td class="value-cell">${formatNumber(itemTotal)}</td>`;
+                html += `</tr>`;
+                
+                if (hasSubItems) {
+                    html += `<tr id="details-${itemId}" class="hidden-details" style="display:none;"><td colspan="2"><table style="width: 100%;"><tbody>`;
+                    const exchangeRate = parseFloat(document.getElementById('exchangeRate').value);
+                    for (const subKey in item.subItems) {
+                        html += `<tr class="sub-item-row">`;
+                        html += `<td style="padding-left: 4rem;">${subKey}</td>`;
+                        html += `<td class="value-cell">${formatNumber(convertToCurrent(item.subItems[subKey], exchangeRate))}</td>`;
+                        html += `</tr>`;
+                    }
+                    html += `</tbody></table></td></tr>`;
+                }
+            }
+
+            // --- Cost breakdown (multi-level expansion) ---
+            html += `<tr class="total-costs-row"><td colspan="2" class="font-bold">Total de Gastos: ${formatNumber(totalCosts)}</td></tr>`;
+            
+            html += generateTableRows(costData, 0, 'costs');
+            
+            const profitClass = totalProfit >= 0 ? 'profit-row' : 'negative-profit-row';
+            html += `<tr class="${profitClass}"><td colspan="2" class="font-bold">Utilidad Neta: ${formatNumber(totalProfit)}</td></tr>`;
+
+            tableBody.innerHTML = html;
+        };
+
+        const toggleDetails = (id) => {
+            const detailsRow = document.getElementById(`details-${id}`);
+            if (!detailsRow) return;
+            const icon = detailsRow.previousElementSibling.querySelector('.toggle-icon');
+
+            if (detailsRow.style.display === "none" || detailsRow.style.display === "") {
+                detailsRow.style.display = "table-row";
+                if (icon) icon.textContent = "—"; // Cambiamos a guión largo
+            } else {
+                detailsRow.style.display = "none";
+                if (icon) icon.textContent = "+";
+            }
+        };
+
+        const currencyToggle = document.getElementById('currencyToggle');
+        const exchangeRateInput = document.getElementById('exchangeRate');
+
+        currencyToggle.addEventListener('change', (e) => {
+            currentCurrency = e.target.checked ? 'ARS' : 'USD';
+            updateReport();
+        });
+
+        exchangeRateInput.addEventListener('input', updateReport);
+
+        updateReport();
+    </script>
+</body>
+</html>
